@@ -1,4 +1,4 @@
-# z-a-rust
+# zinit-annex-rust
 
 A Zsh-Zinit annex that installs rust and cargo packages locally inside the
 plugin or snippet directories. The crate can then have a so called *shim*
