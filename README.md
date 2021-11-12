@@ -89,14 +89,14 @@ and/or `… -> {shim-name}` allows to override them.
 Simply load like a regular plugin, i.e.:
 
 ```zsh
-zinit light zdharma-continuum/z-a-rust
+zinit light zdharma-continuum/zinit-annex-rust
 ```
 
 This installs the annex and makes the `rustup` and `cargo''` ices available.
 
 # Example
 
-![example z-a-rust
-use](https://raw.githubusercontent.com/zdharma-continuum/z-a-rust/master/images/z-a-rust.png)
+![example zinit-annex-rust
+use](https://raw.githubusercontent.com/zdharma-continuum/zinit-annex-rust/master/images/zinit-annex-rust.png)
 
 <!-- vim:set ft=markdown tw=80 fo+=an1 autoindent: -->
