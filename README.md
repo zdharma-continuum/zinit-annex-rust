@@ -70,6 +70,12 @@ zinit id-as=rust wait=1 as=null sbin="bin/*" lucid rustup \
     export CARGO_HOME=\$PWD RUSTUP_HOME=\$PWD/rustup" for \
         zdharma-continuum/null
 
+# When using a global installation of rust in turbo mode, cargos need to
+# omit the rustup ice, and wait on CARGO_HOME and RUSTUP_HOME environment
+# variables to be available.
+zinit wait='[[ -v CARGO_HOME && -v RUSTUP_HOME ]]' for \
+    id-as'rust-exa' cargo'!exa' \
+        zdharma-continuum/null
 ```
 
 Flags meanings:
