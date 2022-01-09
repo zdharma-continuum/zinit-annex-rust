@@ -81,11 +81,19 @@ if (( ${+ICE[rustup]} )) {
             local -x CARGO_HOME="$dir" RUSTUP_HOME="$dir/rustup" 
             if (( !OPTS[opt_-q,--quiet] )) {
                 print -P -- "%F{38}rust annex: %F{154}Running the rustup installer...%f"
-                bin/rustup-init -y --no-modify-path |& command egrep '(installing|installed)'
-                bin/rustup component remove rust-docs
+                bin/rustup-init \
+                    -y \
+                    --no-modify-path \
+                    --profile minimal \
+                    --default-toolchain nightly \
+                    --component cargo clippy rust-std rust-fmt rustc \
+                |& command egrep '(installing|installed)'
             } else {
-                bin/rustup-init -y --no-modify-path &> /dev/null
-                bin/rustup component remove rust-docs &> /dev/null
+                bin/rustup-init \
+                    -y \
+                    --no-modify-path \
+                    --component cargo clippy rust-std rust-fmt rustc \
+                &> /dev/null
             }
         ) || \
             return 0
