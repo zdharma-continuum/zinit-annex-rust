@@ -82,17 +82,17 @@ if (( ${+ICE[rustup]} )) {
             if (( !OPTS[opt_-q,--quiet] )) {
                 print -P -- "%F{38}rust annex: %F{154}Running the rustup installer...%f"
                 bin/rustup-init \
-                    --default-toolchain nightly \
                     -y \
-                    --component cargo clippy rust-std rust-fmt rustc \
+                    --no-modify-path \
+                    --component cargo clippy rustc rust-fmt rust-std \
                     --default-toolchain nightly \
                     --profile minimal \
                 |& command egrep '(installing|installed)'
             } else {
                 bin/rustup-init \
-                    --default-toolchain nightly \
                     -y \
-                    --component cargo clippy rust-std rust-fmt rustc \
+                    --no-modify-path \
+                    --component cargo clippy rustc rust-fmt rust-std \
                     --default-toolchain nightly \
                     --profile minimal \
                 &> /dev/null
