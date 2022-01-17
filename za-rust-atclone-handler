@@ -65,7 +65,7 @@ if (( ${+ICE[rustup]} )) {
     if [[ $hook = *atclone-<-> ]] {
         (
             builtin cd -q "$dir" || {
-                print -P -- "%F{38}rust annex: %F{198}An internal error, please report at: %F{220}https://github.com/zinit/zinit-annex-rust/issues%F{198}%f"
+                print -P -- "%F{38}rust annex: %F{198}An internal error, please report at: %F{220}https://github.com/zdharma-continuum/zinit-annex-rust/issues%F{198}%f"
                 return 1
             }
             command mkdir -p bin rustup
@@ -141,7 +141,7 @@ if [[ -n "${ICE[cargo]}" ]] {
 
     (( ${#cargos} )) && {
         if [[ "$hook" = *atclone-<-> ]]; then
-            print -P -- "%F{38}rust annex: %F{154}Instaling the requested crates...%f"
+            print -P -- "%F{38}rust annex: %F{154}Installing the requested crates...%f"
             if (( ${+ICE[rustup]} )) {
                 local -x CARGO_HOME="$dir" RUSTUP_HOME="$dir/rustup" PATH="$dir/bin:$PATH"
                 command $dir/bin/cargo install --force --root "$dir" "${cargos[@]}"
