@@ -103,6 +103,6 @@ This installs the annex and makes the `rustup` and `cargo''` ices available.
 # Example
 
 ![example zinit-annex-rust
-use](https://raw.githubusercontent.com/zdharma-continuum/zinit-annex-rust/master/images/zinit-annex-rust.png)
+use](https://raw.githubusercontent.com/zdharma-continuum/zinit-annex-rust/master/images/z-a-rust.png)
 
 <!-- vim:set ft=markdown tw=80 fo+=an1 autoindent: -->
