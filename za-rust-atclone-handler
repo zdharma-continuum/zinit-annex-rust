@@ -87,7 +87,7 @@ if (( ${+ICE[rustup]} )) {
                     --component cargo clippy rustc rust-fmt rust-std \
                     --default-toolchain nightly \
                     --profile minimal \
-                |& command egrep '(installing|installed)'
+                |& command grep -E '(installing|installed)'
             } else {
                 bin/rustup-init \
                     -y \
@@ -108,7 +108,7 @@ if (( ${+ICE[rustup]} )) {
             local -x CARGO_HOME="$dir" RUSTUP_HOME="$dir/rustup" PATH="$dir/bin:$PATH"
             if (( !OPTS[opt_-q,--quiet] )) {
                 print -P -- "%F{38}rust annex: %F{154}Running \`rustup update'...%f"
-                command rustup update |& command egrep -i '(error|warning|installing|info: latest update )'
+                command rustup update |& command grep -E -i '(error|warning|installing|info: latest update )'
             } else {
                 command rustup update &> /dev/null
             }
