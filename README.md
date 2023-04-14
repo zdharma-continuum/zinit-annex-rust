@@ -1,9 +1,8 @@
 # zinit-annex-rust<a name="zinit-annex-rust"></a>
 
-A Zsh-Zinit annex that installs rust and cargo packages locally inside the
-plugin or snippet directories. The crate can then have a so called *shim*
-created (name borrowed from `rbenv`) – a script that's located in the standard
-`$PATH` entry "`$ZPFX/bin`" of following contents (example):
+A Zsh-Zinit annex that installs rust and cargo packages locally inside the plugin or snippet directories. The crate can
+then have a so called *shim* created (name borrowed from `rbenv`) – a script that's located in the standard `$PATH`
+entry "`$ZPFX/bin`" of following contents (example):
 
 ```zsh
 #!/usr/bin/env zsh
@@ -21,8 +20,7 @@ lsd "$@"
 
 As it can be seen shim ultimately provides the binary to the command line.
 
-![example zinit-annex-rust
-use](https://raw.githubusercontent.com/zdharma-continuum/zinit-annex-rust/master/images/z-a-rust.png)
+![example zinit-annex-rust use](https://raw.githubusercontent.com/zdharma-continuum/zinit-annex-rust/master/images/z-a-rust.png)
 
 <!-- mdformat-toc start --slug=github --maxlevel=6 --minlevel=2 -->
 
@@ -52,9 +50,8 @@ This installs the annex and makes the `rustup` and `cargo''` ices available.
 
 ## Usage<a name="usage"></a>
 
-The Zinit annex provides two new ices: `rustup` and `cargo''`. The first one
-installs rust inside the plugin's folder using the official `rustup` installer.
-The second one has the following syntax:
+The Zinit annex provides two new ices: `rustup` and `cargo''`. The first one installs rust inside the plugin's folder
+using the official `rustup` installer. The second one has the following syntax:
 
 `cargo"[name-of-the-binary-or-path <-] [[!][c|N|E|O]:]{crate-name} [-> {shim-script-name}]'`
 
@@ -67,9 +64,8 @@ The second one has the following syntax:
 | `O`  | redirect standard output to `/dev/null`                                                           |
 | `c`  | change the current directory to the plugin's or snippet's directory before  executing the command |
 
-As the examples showed, the name of the binary to run and the shim name are
-by default equal to the name of the crate. Specifying `{binary-name} <- …`
-and/or `… -> {shim-name}` allows to override them.
+As the examples showed, the name of the binary to run and the shim name are by default equal to the name of the crate.
+Specifying `{binary-name} <- …` and/or `… -> {shim-name}` allows to override them.
 
 ## Examples<a name="examples"></a>
 
@@ -138,9 +134,8 @@ zi for \
   zdharma-continuum/null
 ```
 
-When using a global installation of rust in turbo mode, cargos need to omit the
-rustup ice, and wait on `$CARGO_HOME` and `$RUSTUP_HOME` environment variables to be
-available
+When using a global installation of rust in turbo mode, cargos need to omit the rustup ice, and wait on `$CARGO_HOME`
+and `$RUSTUP_HOME` environment variables to be available
 
 ```zsh
 zi for \
