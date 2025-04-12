@@ -84,7 +84,7 @@ if (( ${+ICE[rustup]} )) {
                 bin/rustup-init \
                     -y \
                     --no-modify-path \
-                    --component cargo clippy rustc rust-fmt rust-std \
+                    --component cargo,clippy,rustc,rust-fmt,rust-std \
                     --default-toolchain nightly \
                     --profile minimal \
                 |& command grep -E '(installing|installed)'
@@ -92,7 +92,7 @@ if (( ${+ICE[rustup]} )) {
                 bin/rustup-init \
                     -y \
                     --no-modify-path \
-                    --component cargo clippy rustc rust-fmt rust-std \
+                    --component cargo,clippy,rustc,rust-fmt,rust-std \
                     --default-toolchain nightly \
                     --profile minimal \
                 &> /dev/null
