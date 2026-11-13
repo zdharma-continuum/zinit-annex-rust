@@ -33,6 +33,9 @@ As it can be seen shim ultimately provides the binary to the command line.
   - [Install rust and then the `exa` and `lsd` crates](#install-rust-and-then-the-exa-and-lsd-crates)
   - [Installs rust and then the `exa' and `lsd' crates and exposes their binaries by altering $PATH](#installs-rust-and-then-the-exa-and-lsd-crates-and-exposes-their-binaries-by-altering-path)
   - [Installs rust and then the `exa` crate and creates its shim with standard error redirected to /dev/null](#installs-rust-and-then-the-exa-crate-and-creates-its-shim-with-standard-error-redirected-to-devnull)
+  - [Install the `exa` crate with prebuilt binaries using `cargo binstall`](#install-the-exa-crate-with-prebuilt-binaries-using-cargo-binstall)
+  - [Install the `exa` crate with prebuilt binaries using `cargo quickinstall`](#install-the-exa-crate-with-prebuilt-binaries-using-cargo-quickinstall)
+  - [Upgrading crates installed with `B` or `Q`](#upgrading-crates-installed-with-b-or-q)
   - [Install Rust and make it available globally in the system](#install-rust-and-make-it-available-globally-in-the-system)
   - [Use Bin-Gem-Node annex to install the cargo completion provided with rustup](#use-bin-gem-node-annex-to-install-the-cargo-completion-provided-with-rustup)
 
@@ -53,7 +56,7 @@ This installs the annex and makes the `rustup` and `cargo''` ices available.
 The Zinit annex provides two new ices: `rustup` and `cargo''`. The first one installs rust inside the plugin's folder
 using the official `rustup` installer. The second one has the following syntax:
 
-`cargo"[name-of-the-binary-or-path <-] [[!][c|N|E|O]:]{crate-name} [-> {shim-script-name}]'`
+`cargo"[name-of-the-binary-or-path <-] [[!][B|Q|c|N|E|O]:]{crate-name} [-> {shim-script-name}]'`
 
 ### Options<a name="options"></a>
 
@@ -63,6 +66,8 @@ using the official `rustup` installer. The second one has the following syntax:
 | `E`  | redirect standard error to `/dev/null`                                                            |
 | `O`  | redirect standard output to `/dev/null`                                                           |
 | `c`  | change the current directory to the plugin's or snippet's directory before  executing the command |
+| `B`  | install the crate with `cargo binstall` instead of `cargo install` (prebuilt binaries; `cargo-binstall` itself is installed with `cargo install` on first use) |
+| `Q`  | install the crate with `cargo quickinstall` instead of `cargo install` (prebuilt binaries from [cargo-bins/cargo-quickinstall](https://github.com/cargo-bins/cargo-quickinstall); `cargo-quickinstall` itself is installed with `cargo install` on first use). Takes precedence over `B` when both are given |
 
 As the examples showed, the name of the binary to run and the shim name are by default equal to the name of the crate.
 Specifying `{binary-name} <- …` and/or `… -> {shim-name}` allows to override them.
@@ -103,6 +108,38 @@ zinit load zdharma-continuum/null
 zinit ice rustup cargo'!E:exa'
 zinit load zdharma-continuum/null
 ```
+
+### Install the `exa` crate with prebuilt binaries using `cargo binstall`<a name="install-the-exa-crate-with-prebuilt-binaries-using-cargo-binstall"></a>
+
+```zsh
+zinit ice rustup cargo'!B:exa -> ls'
+zinit load zdharma-continuum/null
+```
+
+The `B` flag makes the annex install the crate with `cargo binstall` instead of compiling it from source. If
+`cargo-binstall` isn't available on `$PATH`, the annex first installs it with `cargo install cargo-binstall --locked`:
+with the `rustup` ice it goes into the plugin's directory using the plugin's `cargo`; without it, the system `cargo`
+installs it globally.
+
+### Install the `exa` crate with prebuilt binaries using `cargo quickinstall`<a name="install-the-exa-crate-with-prebuilt-binaries-using-cargo-quickinstall"></a>
+
+```zsh
+zinit ice rustup cargo'!Q:exa -> ls'
+zinit load zdharma-continuum/null
+```
+
+The `Q` flag makes the annex install the crate with `cargo quickinstall` instead of compiling it from source. Since
+`cargo quickinstall` has no `--root` option, the annex points `CARGO_HOME` at the plugin's directory so the binary
+lands in `bin/`, where the shim expects it. If `cargo-quickinstall` isn't available on `$PATH`, the annex first
+installs it with `cargo install cargo-quickinstall --locked`: with the `rustup` ice it goes into the plugin's
+directory using the plugin's `cargo`; without it, the system `cargo` installs it globally. When both `B` and `Q` are
+given for the same crate, `Q` wins.
+
+### Upgrading crates installed with `B` or `Q`<a name="upgrading-crates-installed-with-b-or-q"></a>
+
+On `zinit update`, the annex reinstalls the crates from the `B` and `Q` buckets, which resolves the newest version
+from crates.io. The annex' atpull hook runs on every `zinit update`, even when there are no new commits. Crates
+installed with plain `cargo install` (no `B`/`Q` flag) are not upgraded — `cargo install` has no upgrade mode.
 
 ### Install Rust and make it available globally in the system<a name="install-rust-and-make-it-available-globally-in-the-system"></a>
 

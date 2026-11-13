@@ -19,6 +19,50 @@ fi
 
 local nl=$'\n'
 
+# FUNCTION: .zinit-annex-rust-install-cargo-binstall [[[
+# Installs cargo-binstall with `cargo install` when it isn't already
+# available on $PATH. With the rustup ice it goes into the plugin's
+# directory (and the plugin's cargo is used); without it, the system
+# cargo installs it globally.
+.zinit-annex-rust-install-cargo-binstall() {
+    local dir="$1"
+
+    if (( ${+ICE[rustup]} )) {
+        local -x CARGO_HOME="$dir" RUSTUP_HOME="$dir/rustup" PATH="$dir/bin:$PATH"
+        (( ${+commands[cargo-binstall]} )) && return 0
+
+        print -P -- "%F{38}rust annex: %F{154}cargo-binstall not found, installing it first...%f"
+        command cargo install --force --root "$dir" cargo-binstall --locked
+    } else {
+        (( ${+commands[cargo-binstall]} )) && return 0
+
+        print -P -- "%F{38}rust annex: %F{154}cargo-binstall not found, installing it first...%f"
+        command cargo install cargo-binstall --locked
+    }
+} # ]]]
+
+# FUNCTION: .zinit-annex-rust-install-cargo-quickinstall [[[
+# Installs cargo-quickinstall with `cargo install` when it isn't already
+# available on $PATH. With the rustup ice it goes into the plugin's
+# directory (and the plugin's cargo is used); without it, the system
+# cargo installs it globally.
+.zinit-annex-rust-install-cargo-quickinstall() {
+    local dir="$1"
+
+    if (( ${+ICE[rustup]} )) {
+        local -x CARGO_HOME="$dir" RUSTUP_HOME="$dir/rustup" PATH="$dir/bin:$PATH"
+        (( ${+commands[cargo-quickinstall]} )) && return 0
+
+        print -P -- "%F{38}rust annex: %F{154}cargo-quickinstall not found, installing it first...%f"
+        command cargo install --force --root "$dir" cargo-quickinstall --locked
+    } else {
+        (( ${+commands[cargo-quickinstall]} )) && return 0
+
+        print -P -- "%F{38}rust annex: %F{154}cargo-quickinstall not found, installing it first...%f"
+        command cargo install cargo-quickinstall --locked
+    }
+} # ]]]
+
 # FUNCTION: .zinit-annex-rust-download-file-stdout [[[
 # Downloads file to stdout. Supports following backend commands:
 # curl, wget, lftp, lynx. Used by snippet loading.
@@ -84,18 +128,19 @@ if (( ${+ICE[rustup]} )) {
                 bin/rustup-init \
                     -y \
                     --no-modify-path \
-                    --component cargo,clippy,rustc,rust-fmt,rust-std \
+                    --component cargo,clippy,rustc,rustfmt,rust-std \
                     --default-toolchain nightly \
                     --profile minimal \
-                |& command grep -E '(installing|installed)'
+                |& command grep -E -i '(installing|installed|error|warn)'
             } else {
                 bin/rustup-init \
                     -y \
                     --no-modify-path \
-                    --component cargo,clippy,rustc,rust-fmt,rust-std \
+                    --component cargo,clippy,rustc,rustfmt,rust-std \
                     --default-toolchain nightly \
                     --profile minimal \
-                &> /dev/null
+                &> /dev/null || \
+                    print -P -- "%F{38}rust annex: %F{198}The rustup installer failed%f"
             }
         ) || \
             return 0
@@ -108,19 +153,20 @@ if (( ${+ICE[rustup]} )) {
             local -x CARGO_HOME="$dir" RUSTUP_HOME="$dir/rustup" PATH="$dir/bin:$PATH"
             if (( !OPTS[opt_-q,--quiet] )) {
                 print -P -- "%F{38}rust annex: %F{154}Running \`rustup update'...%f"
-                command rustup update |& command grep -E -i '(error|warning|installing|info: latest update )'
+                command "$dir/bin/rustup" update |& command grep -E -i '(error|warning|installing|info: latest update )'
             } else {
-                command rustup update &> /dev/null
+                command "$dir/bin/rustup" update &> /dev/null
             }
         )
     }
 }
 
 if [[ -n "${ICE[cargo]}" ]] {
-    local -a cargo_defs bin_pkg_dst tmpsdst cargos
+    local -a cargo_defs bin_pkg_dst tmpsdst cargos binstall_cargos quickinstall_cargos
     cargo_defs=( "${(s.;.)ICE[cargo]}" )
 
     local cargo
+    local -i use_binstall=0 use_quickinstall=0
 
     for cargo ( $cargo_defs ) {
         bin_pkg_dst=( ${(@s.->.)cargo} )
@@ -132,22 +178,52 @@ if [[ -n "${ICE[cargo]}" ]] {
         fi
         bin_pkg_dst=( "${bin_pkg_dst[@]//((#s)[[:space:]]##|[[:space:]]##(#e))/}" )
         bin_pkg_dst[2]=${bin_pkg_dst[2]#\!}
+        use_binstall=0
+        use_quickinstall=0
+        [[ ${bin_pkg_dst[2]} = [gncNEOBQ]#B[gncNEOBQ]#:* ]] && use_binstall=1
+        [[ ${bin_pkg_dst[2]} = [gncNEOBQ]#Q[gncNEOBQ]#:* ]] && use_quickinstall=1
         bin_pkg_dst[1]=${bin_pkg_dst[1]##[a-zA-Z]##:}
         bin_pkg_dst[2]=${bin_pkg_dst[2]##[a-zA-Z]##:}
         bin_pkg_dst[3]=${bin_pkg_dst[3]##[a-zA-Z]##:}
 
-        cargos+=( ${bin_pkg_dst[2]} )
+        if (( use_quickinstall )); then
+            quickinstall_cargos+=( ${bin_pkg_dst[2]} )
+        elif (( use_binstall )); then
+            binstall_cargos+=( ${bin_pkg_dst[2]} )
+        else
+            cargos+=( ${bin_pkg_dst[2]} )
+        fi
     }
 
-    (( ${#cargos} )) && {
+    (( ${#cargos} || ${#binstall_cargos} || ${#quickinstall_cargos} )) && {
         if [[ "$hook" = *atclone-<-> ]]; then
             print -P -- "%F{38}rust annex: %F{154}Installing the requested crates...%f"
-            if (( ${+ICE[rustup]} )) {
+            # Only the rustup ice puts the plugin's toolchain on $PATH; without
+            # it the system `cargo` is used and a stale $dir/bin is ignored.
+            if (( ${+ICE[rustup]} )); then
                 local -x CARGO_HOME="$dir" RUSTUP_HOME="$dir/rustup" PATH="$dir/bin:$PATH"
-                command $dir/bin/cargo install --force --root "$dir" "${cargos[@]}"
-            } else {
-                cargo install --force --root "$dir" "${cargos[@]}"
-            }
+            fi
+            if (( ${#cargos} )); then
+                command cargo install --force --root "$dir" "${cargos[@]}"
+            fi
+            if (( ${#binstall_cargos} )); then
+                if .zinit-annex-rust-install-cargo-binstall "$dir"; then
+                    command cargo binstall --no-confirm --force --root "$dir" "${binstall_cargos[@]}"
+                fi
+            fi
+            if (( ${#quickinstall_cargos} )); then
+                if .zinit-annex-rust-install-cargo-quickinstall "$dir"; then
+                    # cargo-quickinstall has no --root; it installs into
+                    # $CARGO_HOME/bin, so CARGO_HOME has to point at $dir.
+                    # The helper itself runs before this, with the default
+                    # $CARGO_HOME, i.e. installs system-wide without the
+                    # rustup ice.
+                    if (( ! ${+ICE[rustup]} )); then
+                        local -x CARGO_HOME="$dir"
+                    fi
+                    command cargo quickinstall --force -- "${quickinstall_cargos[@]}"
+                fi
+            fi
         elif [[ "$hook" = *atpull-<-> ]]; then
             if (( !OPTS[opt_-q,--quiet] )) {
                 print -P -- "%F{38}rust annex: %F{154}Updating the installed crates...%f"
@@ -160,15 +236,38 @@ if [[ -n "${ICE[cargo]}" ]] {
                     builtin cd -q "$toml_dir" && {
                         if (( ${+ICE[rustup]} )) {
                             local -x CARGO_HOME="$dir" RUSTUP_HOME="$dir/rustup" PATH="$dir/bin:$PATH"
-                            command $dir/bin/cargo update
-                            command $dir/bin/cargo build
-                        } else {
-                            cargo update
-                            cargo build
                         }
+                        command cargo update
+                        command cargo build
                     }
                 )
             }
+            # The binstall/quickinstall buckets are upgraded by reinstalling,
+            # which resolves the newest version from crates.io. Plain `cargo
+            # install` entries (the cargos array) have no upgrade mode.
+            # Only the rustup ice puts the plugin's toolchain on $PATH; without
+            # it the system `cargo` is used and a stale $dir/bin is ignored.
+            if (( ${+ICE[rustup]} )); then
+                local -x CARGO_HOME="$dir" RUSTUP_HOME="$dir/rustup" PATH="$dir/bin:$PATH"
+            fi
+            if (( ${#binstall_cargos} )); then
+                if .zinit-annex-rust-install-cargo-binstall "$dir"; then
+                    command cargo binstall --no-confirm --root "$dir" "${binstall_cargos[@]}"
+                fi
+            fi
+            if (( ${#quickinstall_cargos} )); then
+                if .zinit-annex-rust-install-cargo-quickinstall "$dir"; then
+                    # cargo-quickinstall has no --root; it installs into
+                    # $CARGO_HOME/bin, so CARGO_HOME has to point at $dir.
+                    # The helper itself runs before this, with the default
+                    # $CARGO_HOME, i.e. installs system-wide without the
+                    # rustup ice.
+                    if (( ! ${+ICE[rustup]} )); then
+                        local -x CARGO_HOME="$dir"
+                    fi
+                    command cargo quickinstall --force -- "${quickinstall_cargos[@]}"
+                fi
+            fi
         fi
     }
 }
@@ -196,13 +295,13 @@ if [[ -n "${ICE[cargo]}" ]] {
         bin_pkg_dst=( "${bin_pkg_dst[@]//((#s)[[:space:]]##|[[:space:]]##(#e))/}" )
         if [[ ${bin_pkg_dst[2]} = \!* ]]; then
             bin_pkg_dst[2]=${bin_pkg_dst[2]#\!}
-            [[ ${bin_pkg_dst[2]} = [gncNEO]#R[gncNEO]#:* ]] && set_rust_home_vars=1
-            [[ ${bin_pkg_dst[2]} = [gncNEO]#g[gncNEO]#:* ]] && set_gem_home=1
-            [[ ${bin_pkg_dst[2]} = [gncNEO]#n[gncNEO]#:* ]] && set_node_path=1
-            [[ ${bin_pkg_dst[2]} = [gncNEO]#c[gncNEO]#:* ]] && set_cwd=1
-            [[ ${bin_pkg_dst[2]} = [gncNEO]#N[gncNEO]#:* ]] && use_all_null=1
-            [[ ${bin_pkg_dst[2]} = [gncNEO]#E[gncNEO]#:* ]] && use_err_null=1
-            [[ ${bin_pkg_dst[2]} = [gncNEO]#O[gncNEO]#:* ]] && use_out_null=1
+            [[ ${bin_pkg_dst[2]} = [gncNEOBQ]#R[gncNEOBQ]#:* ]] && set_rust_home_vars=1
+            [[ ${bin_pkg_dst[2]} = [gncNEOBQ]#g[gncNEOBQ]#:* ]] && set_gem_home=1
+            [[ ${bin_pkg_dst[2]} = [gncNEOBQ]#n[gncNEOBQ]#:* ]] && set_node_path=1
+            [[ ${bin_pkg_dst[2]} = [gncNEOBQ]#c[gncNEOBQ]#:* ]] && set_cwd=1
+            [[ ${bin_pkg_dst[2]} = [gncNEOBQ]#N[gncNEOBQ]#:* ]] && use_all_null=1
+            [[ ${bin_pkg_dst[2]} = [gncNEOBQ]#E[gncNEOBQ]#:* ]] && use_err_null=1
+            [[ ${bin_pkg_dst[2]} = [gncNEOBQ]#O[gncNEOBQ]#:* ]] && use_out_null=1
             bin_pkg_dst[1]=${bin_pkg_dst[1]##[a-zA-Z]##:}
             bin_pkg_dst[2]=${bin_pkg_dst[2]##[a-zA-Z]##:}
             bin_pkg_dst[3]=${bin_pkg_dst[3]##[a-zA-Z]##:}
