@@ -35,6 +35,7 @@ As it can be seen shim ultimately provides the binary to the command line.
   - [Installs rust and then the `exa` crate and creates its shim with standard error redirected to /dev/null](#installs-rust-and-then-the-exa-crate-and-creates-its-shim-with-standard-error-redirected-to-devnull)
   - [Install the `exa` crate with prebuilt binaries using `cargo binstall`](#install-the-exa-crate-with-prebuilt-binaries-using-cargo-binstall)
   - [Install the `exa` crate with prebuilt binaries using `cargo quickinstall`](#install-the-exa-crate-with-prebuilt-binaries-using-cargo-quickinstall)
+  - [Upgrading crates installed with `B` or `Q`](#upgrading-crates-installed-with-b-or-q)
   - [Install Rust and make it available globally in the system](#install-rust-and-make-it-available-globally-in-the-system)
   - [Use Bin-Gem-Node annex to install the cargo completion provided with rustup](#use-bin-gem-node-annex-to-install-the-cargo-completion-provided-with-rustup)
 
@@ -131,6 +132,13 @@ The `Q` flag makes the annex install the crate with `cargo quickinstall` instead
 lands in `bin/`, where the shim expects it. If `cargo-quickinstall` isn't available on `$PATH`, the annex first
 installs it into the plugin's directory with `cargo install cargo-quickinstall --locked`. When both `B` and `Q` are
 given for the same crate, `Q` wins.
+
+### Upgrading crates installed with `B` or `Q`<a name="upgrading-crates-installed-with-b-or-q"></a>
+
+On `zinit update`, the annex reinstalls the crates from the `B` and `Q` buckets, which resolves the newest version
+from crates.io. Crates installed with plain `cargo install` (no `B`/`Q` flag) are not upgraded — `cargo install` has
+no upgrade mode. Note that the atpull hooks only run when the plugin actually has new commits; add the `run-atpull`
+ice to upgrade on every `zinit update`.
 
 ### Install Rust and make it available globally in the system<a name="install-rust-and-make-it-available-globally-in-the-system"></a>
 

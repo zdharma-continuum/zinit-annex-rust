@@ -251,6 +251,42 @@ if [[ -n "${ICE[cargo]}" ]] {
                     }
                 )
             }
+            # The binstall/quickinstall buckets are upgraded by reinstalling,
+            # which resolves the newest version from crates.io. Plain `cargo
+            # install` entries (the cargos array) have no upgrade mode.
+            local cargo_bin=cargo
+            if (( ${+ICE[rustup]} )) {
+                local -x CARGO_HOME="$dir" RUSTUP_HOME="$dir/rustup" PATH="$dir/bin:$PATH"
+                cargo_bin="$dir/bin/cargo"
+            }
+            if (( ${#binstall_cargos} )); then
+                # cargo has to find cargo-binstall on $PATH to dispatch the
+                # `binstall` subcommand; the rustup branch already exports it.
+                if (( ! ${+ICE[rustup]} )) {
+                    local -x PATH="$dir/bin:$PATH"
+                }
+                if .zinit-annex-rust-install-cargo-binstall "$cargo_bin" "$dir"; then
+                    if (( ${+ICE[rustup]} )) {
+                        command "$cargo_bin" binstall --no-confirm --root "$dir" "${binstall_cargos[@]}"
+                    } else {
+                        cargo binstall --no-confirm --root "$dir" "${binstall_cargos[@]}"
+                    }
+                fi
+            fi
+            if (( ${#quickinstall_cargos} )); then
+                # cargo-quickinstall has no --root; it installs into
+                # $CARGO_HOME/bin, so CARGO_HOME has to point at $dir.
+                if (( ! ${+ICE[rustup]} )) {
+                    local -x CARGO_HOME="$dir" PATH="$dir/bin:$PATH"
+                }
+                if .zinit-annex-rust-install-cargo-quickinstall "$cargo_bin" "$dir"; then
+                    if (( ${+ICE[rustup]} )) {
+                        command "$cargo_bin" quickinstall --force -- "${quickinstall_cargos[@]}"
+                    } else {
+                        cargo quickinstall --force -- "${quickinstall_cargos[@]}"
+                    }
+                fi
+            fi
         fi
     }
 }
