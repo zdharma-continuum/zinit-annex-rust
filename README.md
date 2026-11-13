@@ -117,8 +117,9 @@ zinit load zdharma-continuum/null
 ```
 
 The `B` flag makes the annex install the crate with `cargo binstall` instead of compiling it from source. If
-`cargo-binstall` isn't available on `$PATH`, the annex first installs it into the plugin's directory with
-`cargo install cargo-binstall --locked`.
+`cargo-binstall` isn't available on `$PATH`, the annex first installs it with `cargo install cargo-binstall --locked`:
+with the `rustup` ice it goes into the plugin's directory using the plugin's `cargo`; without it, the system `cargo`
+installs it globally.
 
 ### Install the `exa` crate with prebuilt binaries using `cargo quickinstall`<a name="install-the-exa-crate-with-prebuilt-binaries-using-cargo-quickinstall"></a>
 
@@ -130,15 +131,15 @@ zinit load zdharma-continuum/null
 The `Q` flag makes the annex install the crate with `cargo quickinstall` instead of compiling it from source. Since
 `cargo quickinstall` has no `--root` option, the annex points `CARGO_HOME` at the plugin's directory so the binary
 lands in `bin/`, where the shim expects it. If `cargo-quickinstall` isn't available on `$PATH`, the annex first
-installs it into the plugin's directory with `cargo install cargo-quickinstall --locked`. When both `B` and `Q` are
+installs it with `cargo install cargo-quickinstall --locked`: with the `rustup` ice it goes into the plugin's
+directory using the plugin's `cargo`; without it, the system `cargo` installs it globally. When both `B` and `Q` are
 given for the same crate, `Q` wins.
 
 ### Upgrading crates installed with `B` or `Q`<a name="upgrading-crates-installed-with-b-or-q"></a>
 
 On `zinit update`, the annex reinstalls the crates from the `B` and `Q` buckets, which resolves the newest version
-from crates.io. Crates installed with plain `cargo install` (no `B`/`Q` flag) are not upgraded — `cargo install` has
-no upgrade mode. Note that the atpull hooks only run when the plugin actually has new commits; add the `run-atpull`
-ice to upgrade on every `zinit update`.
+from crates.io. The annex' atpull hook runs on every `zinit update`, even when there are no new commits. Crates
+installed with plain `cargo install` (no `B`/`Q` flag) are not upgraded — `cargo install` has no upgrade mode.
 
 ### Install Rust and make it available globally in the system<a name="install-rust-and-make-it-available-globally-in-the-system"></a>
 
